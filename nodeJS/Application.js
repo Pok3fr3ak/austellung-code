@@ -1,5 +1,16 @@
 var dgram = require("dgram"); // node native module
 
+/*
+const SerialPort = require('serialport')
+const port = new SerialPort('COM4', { // as displayed in device manager
+  baudRate: 115200
+})
+
+port.on('data', function (data) {
+	console.log(data.join("_").toString())
+  })
+*/
+
 var TC = require("./MTC/TC.js");
 var MessageSender = require("./MTC/MessageSender.js");
 var MTCVideoSlavePlayer = require("./MTC/MTCVideoSlavePlayer.js");
