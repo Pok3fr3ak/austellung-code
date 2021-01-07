@@ -3,6 +3,9 @@ var Timecode = require("smpte-timecode");
 
 // proxy object to Timecode with fixed 25 FPS
 module.exports = class TC {
+
+	static get ZERO() { return new TC("00:00:00:00"); }
+
 	constructor(positionString) {
 		this.timecode = new Timecode(positionString, 25);
 	}

@@ -1,40 +1,27 @@
-var dgram = require("dgram"); // node native module
-// 1 socket for all network business
-var socket = dgram.createSocket("udp4");
+// 1 socket for all UDP network business
+const socket = require("dgram").createSocket("udp4"); // node native module
 
-const SerialPort = require('serialport');
-const port = new SerialPort('COM5', { // as displayed in Windows device manager
-  baudRate: 9600
-})
+const TC = require("./MTC/TC.js");
+const UDPClient = require("./UDPClient.js");
+const MTCVideoSlavePlayer = require("./MTC/MTCVideoSlavePlayer.js");
+const OSCValueSender = require("./OSC/OSCValueSender.js");
+const ArduinoClient = require("./Arduino/ArduinoClient.js");
 
-// Arduino delivers ASCII with CR LF newlines
-var parser = port.pipe(new SerialPort.parsers.Readline({ delimiter: "\r\n", encoding: "ascii" }));
-// SEND OSC
-parser.on('data', function (data) {
+// HERE STARTS THE FUN WITH THE ACTUAL GAME LOGIC...
 
-  var intValue = parseInt(data.split("_")[1]); // dispatch individual potentiometers, to be continued
+var reaper = new OSCValueSender(new UDPClient(socket, "127.0.0.1", 5678));
 
-  var floatBuffer = Buffer.alloc(4); // OSC wants binary 32 bit
-  // float is normalized (0 - 1) - Reaper wants this
-  floatBuffer.writeFloatBE(intValue/127); // ... float BIG ENDIAN (always)
+// "COM5" or as displayed in Windows device manager
+var arduino = new ArduinoClient("COM7");
 
+arduino.onPotentiometer_6((intValue) => {
+   // float is normalized (0 - 1) - Reaper wants this
+   var normalized = intValue/127;
+   // Reaper understands this
+   reaper.sendFloatValue("/master/volume", normalized);
+});
 
-  var buffer = Buffer.concat([
-    Buffer.from("/master/volume"), // osc adress - Reaper understands this
-    Buffer.alloc(2), // two zero bytes (no idea why)
-    Buffer.from(",f"), // f means argument will be float
-    Buffer.alloc(2), // two zero bytes (no idea why)
-    floatBuffer]);
-  
-  socket.send(buffer, 0, buffer.length, 5678, "127.0.0.1");
-})
+var localhostPlayer = new MTCVideoSlavePlayer(
+	new UDPClient(socket, "127.0.0.1", MTCVideoSlavePlayer.PORT));
 
-var TC = require("./MTC/TC.js");
-var MessageSender = require("./MTC/MessageSender.js");
-var MTCVideoSlavePlayer = require("./MTC/MTCVideoSlavePlayer.js");
-const MTCVideoSlave_PORT = 13203;
-
-var localhost = new MTCVideoSlavePlayer(
-	new MessageSender(socket, "127.0.0.1", MTCVideoSlave_PORT));
-
-localhost.play(new TC("00:00:10:00"), new TC("00:00:45:00"));
+localhostPlayer.play(new TC("00:00:10:00"), new TC("00:00:12:00"), () => console.log("ended"));

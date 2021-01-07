@@ -14,9 +14,13 @@ void loop() {
       lastVal = currentVal;
 	    // only send DELTA
 	    // sends integer as string non-padded
+
+      // these calls block execution until data has been sent
       Serial.print("A5_");
       Serial.print(currentVal);
       Serial.println();
+
+      // unclear if this is needed at all, let us find out
       delay(10); // "pseudo-throttle"
     }
 }

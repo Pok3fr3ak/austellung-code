@@ -14,7 +14,7 @@ module.exports = class MTC_Helper {
 	static getEightQuarterFrameMessages(timecode)
 	{
 		if (timecode.hours > 0b00011111)
-			throw "Hours cannot be greater than 0b00011111";
+			throw "Hours cannot be greater than 0b00011111, only 5 bits reserved for them.";
 
 		return [
 		0b0000 << 4 | timecode.frames & 0x0F, // add mask is 0000 1111
@@ -34,13 +34,13 @@ module.exports = class MTC_Helper {
 	// full SYSX message for jumps and initialization
 	static getTimecodeMessage(timecode)
 	{
-		return
-			"F0" + // sysex anfang
+		return "F0" + // sysex anfang
 			"7F" + // real-time universal message (127)
 			"7F" + // channel global broadcast (127)
 			"01" + // it is timecode
 			"01" + // it is full timecode msg
-			this.numberToHex(getFramerateNibble(timecode) << 4 | timecode.hours) + // rate and hh
+			// I really cannot figure out why "THIS" is needed to call a static method!?
+			this.numberToHex(this.getFramerateNibble(timecode) << 4 | timecode.hours) + // rate and hh
 			this.numberToHex(timecode.minutes) + // mm
 			this.numberToHex(timecode.seconds) + // ss
 			this.numberToHex(timecode.frames) + // ff
